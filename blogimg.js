@@ -12,7 +12,7 @@
  *   header  1024×576  (16:9) — hero / OG image
  *   inline  1024×576  (16:9) — in-article image (same ratio, agent may vary)
  *
- * Token: pass via --token flag
+ * Token: pass via --token flag or NETA_TOKEN environment variable
  */
 
 const BASE = 'https://api.talesofai.cn';
@@ -48,8 +48,8 @@ const [,, cmd, ...rawArgs] = process.argv;
 
 if (cmd === 'gen') {
   const flags  = parseFlags(rawArgs);
-  const token  = flags.token;
-  if (!token) throw new Error('API token required. Pass --token <your_token>');
+  const token  = flags.token ?? process.env.NETA_TOKEN;
+  if (!token) throw new Error('API token required. Pass --token <token> or set NETA_TOKEN env var.');
   const prompt = flags._.join(' ');
   const size   = SIZES[flags.size] ?? SIZES.header;
 
