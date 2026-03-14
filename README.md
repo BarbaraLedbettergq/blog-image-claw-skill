@@ -2,137 +2,139 @@
 
 <!--skill-metadata
 name: blog-image-claw-skill
-description: Auto-generate hero and inline images for blog posts from titles and section text.
-emoji: "📝"
-requires: [NETA_TOKEN, node]
+description: |
+  Auto-generate matching hero and inline images for blog posts.
+  The agent reads the blog content, derives visual prompts for each section,
+  and calls blogimg.js to produce a ready-to-use image set.
+
+  Trigger conditions:
+  - User shares a blog post and asks for images
+  - User says: add images / illustrate my post / generate blog images / hero image
+  - User pastes a file path to a markdown or HTML blog file
+
+  Prerequisites: NETA_TOKEN in ~/.openclaw/workspace/.env
+  Response principle: Output each image as soon as it's ready, don't wait for the full set.
+  Language: Match the user's language throughout.
 -->
 
 # Blog Image Claw Skill
 
-> Core tool: `node blogimg.js` — generates a full image set for your blog post in one command.
-
-Stop searching stock photo sites. Paste your blog title and section text — get a matching hero image and inline illustrations instantly.
-
----
-
-## 0. Initialization
-
-On trigger, **immediately output**:
-```
-📝 Blog image generator ready. Share your title or paste your content.
-```
-
-**Trigger conditions:**
-- User says: blog image / article image / header image / post illustration
-- User pastes a blog title or section text
-- User says "add images to my blog post"
+> Core tool: `node blogimg.js gen <prompt> [--size header|inline]`
+> The agent handles all content analysis and prompt creation. The script only calls the image API.
 
 ---
 
-## 1. Commands
+## 0. Read the Blog Content
 
-### Header image (hero / OG image)
+Accept input in any form:
+- User pastes text directly in chat → use as-is
+- User gives a file path → read the file
+- User shares a URL → fetch the page content
+
+Once content is loaded, immediately output:
+```
+📝 Got it! Analyzing your blog post...
+```
+
+---
+
+## 1. Analyze Content → Build Prompts
+
+Read the blog and extract:
+
+| What to extract | How to use it |
+|----------------|--------------|
+| **Title / topic** | Hero image prompt — capture the overall theme |
+| **Key sections** | One inline prompt per major section (max 3) |
+| **Tone** | Dark/moody vs light/bright — match the writing style |
+| **Domain** | Tech → clean digital art · Lifestyle → warm photography · Science → dramatic lighting |
+
+**Prompt rules:**
+- Purely visual — no text, no typography, no UI elements, no charts
+- Specific: describe colors, lighting, mood, objects, setting, composition
+- Wide composition (16:9), suitable for blog layout
+- Append: `, high quality, no text, blog image`
+
+**Example — blog: "How Sleep Affects Your Brain":**
+```
+header → "glowing neural network inside a human silhouette sleeping, soft blue light,
+          dark background, dreamlike atmosphere, high quality, no text, blog image"
+inline 1 → "close-up of neurons firing in slow motion, electric blue pulses,
+             dark moody background, high quality, no text, blog image"
+inline 2 → "peaceful bedroom at night, moonlight through window, calm and serene,
+             soft lighting, high quality, no text, blog image"
+```
+
+---
+
+## 2. Generate Images
+
+For each prompt, run:
 
 ```bash
-node blogimg.js header "10 Tips for Better Productivity in 2026" --style editorial
-# → {"type":"header","status":"SUCCESS","url":"https://..."}
+node blogimg.js gen "<visual_prompt>" --size header
+# stderr: 🖼️  Generating header image...
+# stderr: ⏳ Task: xxx
+# stdout: {"status":"SUCCESS","url":"https://...","width":1024,"height":576}
 ```
-
-### Inline image (for a specific section)
 
 ```bash
-node blogimg.js inline "AI is revolutionizing medical diagnosis with deep learning" --style tech --tone dark
-# → {"type":"inline","status":"SUCCESS","url":"https://..."}
+node blogimg.js gen "<visual_prompt>" --size inline
+# → same output format
 ```
 
-### Full post — header + all inline images at once
-
-```bash
-node blogimg.js post "The Future of AI in Healthcare" \
-  "AI is revolutionizing medical diagnosis" \
-  "Robotic surgery is becoming more autonomous" \
-  --style tech --tone dark
-# → [{header}, {inline 1}, {inline 2}]
-```
+- **Forward stderr in real-time** to the user
+- Output each image URL immediately as it completes — don't batch
+- `status=FAILURE` → regenerate with a simplified prompt
+- `status=TIMEOUT` → retry once, then skip and note it
 
 ---
 
-## 2. Style Guide
+## 3. Present Results
 
-| Style | Best for |
-|-------|---------|
-| `editorial` | General blogs, news, lifestyle (default) |
-| `tech` | AI, software, startup, science |
-| `lifestyle` | Travel, food, wellness, fashion |
-| `minimal` | Design, architecture, clean brands |
-| `photo` | Photorealistic, cinematic storytelling |
+Output each image as it's ready:
 
-Tone: `light` (bright, airy) · `dark` (moody, dramatic)
-
----
-
-## 3. Workflow
-
-**Quick single image:**
-```
-User: generate a header for "How to Learn a Language in 30 Days"
-Agent: node blogimg.js header "How to Learn a Language in 30 Days" --style lifestyle
-```
-
-**Full post:**
-```
-User: [pastes blog post with title + sections]
-Agent: extracts title + key section summaries → runs blogimg.js post
-```
-
-Output per image:
 ```
 ━━━━━━━━━━━━━━━━━━━━━━━━
-📸 Header — "Your Title"
-https://oss.../picture/xxx.webp
+🖼️ Header
+{image_url}
 
-📸 Inline 1 — "section summary..."
-https://oss.../picture/yyy.webp
+📸 Inline 1 — {section name}
+{image_url}
+
+📸 Inline 2 — {section name}
+{image_url}
 ━━━━━━━━━━━━━━━━━━━━━━━━
+{N} images ready. Drop them into your blog post.
 ```
+
+Quick buttons:
+- `Regenerate header 🔄` → `@{bot_name} regenerate the header image`
+- `Different style 🎨` → `@{bot_name} try a darker style`
+- `More inline images ➕` → `@{bot_name} generate more inline images`
 
 ---
 
-## 4. Image Sizes
+## 4. Style Suggestions
 
-All images are **1024×576 (16:9)** — fits blog headers, OG previews, and inline content.
+If the user asks for a specific look, adjust the prompt accordingly:
+
+| Style | Add to prompt |
+|-------|--------------|
+| Editorial | `editorial photography, professional, magazine style` |
+| Tech | `clean tech illustration, digital art, blue tones` |
+| Lifestyle | `lifestyle photography, warm tones, natural light` |
+| Minimal | `minimalist, white space, simple composition` |
+| Cinematic | `cinematic, dramatic lighting, movie still` |
+| Dark | `dark, moody, rich shadows, dramatic` |
 
 ---
 
 ## 5. Error Handling
 
-| Error | Message |
-|-------|---------|
+| Situation | Response |
+|-----------|---------|
 | Token missing | "Add `NETA_TOKEN=...` to `~/.openclaw/workspace/.env`" |
-| status=FAILURE | ⚠️ Image failed — try rephrasing the section |
-| status=TIMEOUT | ⏳ Timed out — retry the failed section |
-
----
-
-## CLI Reference
-
-```bash
-node blogimg.js header  "<title>"          [--style S] [--tone light|dark]
-node blogimg.js inline  "<section text>"   [--style S] [--tone light|dark]
-node blogimg.js post    "<title>" [sections...] [--style S] [--tone light|dark] [--count n]
-```
-
-**Output (JSON):**
-```json
-[
-  { "type": "header", "status": "SUCCESS", "url": "https://...", "title": "..." },
-  { "type": "inline", "status": "SUCCESS", "url": "https://...", "section": "...", "index": 1 }
-]
-```
-
-## Setup
-
-```
-NETA_TOKEN=your_token_here
-```
-in `~/.openclaw/workspace/.env`
+| Can't read file | Ask user to paste content directly |
+| Image FAILURE | Simplify the prompt and retry |
+| Image TIMEOUT | Skip and continue, note which image failed |

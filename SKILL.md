@@ -1,6 +1,6 @@
 ---
 name: blog-image-claw-skill
-description: Auto-generate hero and inline images for blog posts from titles and section text. One command produces a full image set ready to drop into your article.
+description: Auto-generate matching hero and inline images for blog posts. The agent reads the content, derives visual prompts, and produces a ready-to-use image set.
 version: 1.0.0
 metadata:
   openclaw:
@@ -16,24 +16,16 @@ metadata:
 
 # Blog Image Claw Skill
 
-Auto-generate hero and inline images for blog posts.
+The agent reads blog content (text, file, or URL), derives visual prompts for the hero and each key section, then calls `blogimg.js` to generate images.
 
-## Commands
+## Helper script
 
 ```bash
-# Single hero/OG image
-node blogimg.js header "<title>" [--style editorial|tech|lifestyle|minimal|photo] [--tone light|dark]
-
-# Single inline image for a section
-node blogimg.js inline "<section text>" [--style ...] [--tone light|dark]
-
-# Full post: header + all inline images at once
-node blogimg.js post "<title>" "<section1>" "<section2>" ... [--style ...] [--tone light|dark] [--count n]
+node blogimg.js gen "<visual_prompt>" --size header|inline
+# → {"status":"SUCCESS","url":"https://...","width":1024,"height":576}
 ```
 
-## Styles
-
-`editorial` · `tech` · `lifestyle` · `minimal` · `photo`
+The agent handles all content analysis. The script only calls the image generation API.
 
 ## Setup
 
