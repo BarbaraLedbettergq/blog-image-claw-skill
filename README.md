@@ -22,6 +22,16 @@ description: |
 > Core tool: `node blogimg.js gen <prompt> [--size header|inline]`
 > The agent handles all content analysis and prompt creation. The script only calls the image API.
 
+## Install
+
+```bash
+# Via OpenClaw
+clawhub install blog-image-claw-skill
+
+# Via skills CLI (Claude Code, Cursor, Copilot, and 38+ agents)
+npx skills add BarbaraLedbettergq/blog-image-claw-skill
+```
+
 ---
 
 ## 0. Read the Blog Content
