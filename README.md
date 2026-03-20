@@ -1,150 +1,104 @@
-![banner](./banner.webp)
+# Blog Image Generator
 
-<!--skill-metadata
-name: blog-image-claw-skill
-description: |
-  Auto-generate matching hero and inline images for blog posts.
-  The agent reads the blog content, derives visual prompts for each section,
-  and calls blogimg.js to produce a ready-to-use image set.
+Generate stunning **ai blog image generator** images from a text description using AI — powered by the Neta talesofai API. Get back a direct image URL instantly, ready to embed anywhere.
 
-  Trigger conditions:
-  - User shares a blog post and asks for images
-  - User says: add images / illustrate my post / generate blog images / hero image
-  - User pastes a file path to a markdown or HTML blog file
-
-  Prerequisites: NETA_TOKEN in ~/.openclaw/workspace/.env
-  Response principle: Output each image as soon as it's ready, don't wait for the full set.
-  Language: Match the user's language throughout.
--->
-
-# Blog Image Claw Skill
-
-> Core tool: `node blogimg.js gen <prompt> [--size header|inline]`
-> The agent handles all content analysis and prompt creation. The script only calls the image API.
+---
 
 ## Install
 
+**Via npx skills:**
 ```bash
-# Via OpenClaw
-clawhub install blog-image-claw-skill
-
-# Via skills CLI (Claude Code, Cursor, Copilot, and 38+ agents)
 npx skills add BarbaraLedbettergq/blog-image-claw-skill
 ```
 
----
-
-## 0. Read the Blog Content
-
-Accept input in any form:
-- User pastes text directly in chat → use as-is
-- User gives a file path → read the file
-- User shares a URL → fetch the page content
-
-Once content is loaded, immediately output:
-```
-📝 Got it! Analyzing your blog post...
+**Via ClawHub:**
+```bash
+clawhub install blog-image-claw-skill
 ```
 
 ---
 
-## 1. Analyze Content → Build Prompts
-
-Read the blog and extract:
-
-| What to extract | How to use it |
-|----------------|--------------|
-| **Title / topic** | Hero image prompt — capture the overall theme |
-| **Key sections** | One inline prompt per major section (max 3) |
-| **Tone** | Dark/moody vs light/bright — match the writing style |
-| **Domain** | Tech → clean digital art · Lifestyle → warm photography · Science → dramatic lighting |
-
-**Prompt rules:**
-- Purely visual — no text, no typography, no UI elements, no charts
-- Specific: describe colors, lighting, mood, objects, setting, composition
-- Wide composition (16:9), suitable for blog layout
-- Append: `, high quality, no text, blog image`
-
-**Example — blog: "How Sleep Affects Your Brain":**
-```
-header → "glowing neural network inside a human silhouette sleeping, soft blue light,
-          dark background, dreamlike atmosphere, high quality, no text, blog image"
-inline 1 → "close-up of neurons firing in slow motion, electric blue pulses,
-             dark moody background, high quality, no text, blog image"
-inline 2 → "peaceful bedroom at night, moonlight through window, calm and serene,
-             soft lighting, high quality, no text, blog image"
-```
-
----
-
-## 2. Generate Images
-
-For each prompt, run:
+## Usage
 
 ```bash
-node blogimg.js gen "<visual_prompt>" --size header
-# stderr: 🖼️  Generating header image...
-# stderr: ⏳ Task: xxx
-# stdout: {"status":"SUCCESS","url":"https://...","width":1024,"height":576}
+# Basic usage — describe what you want
+node blogimageclaw.js "minimalist flat-lay of a laptop and coffee on a wooden desk"
+
+# Specify size
+node blogimageclaw.js "futuristic city skyline at dusk" --size landscape
+
+# Use a reference image (style transfer)
+node blogimageclaw.js "vibrant abstract background" --ref <picture_uuid>
+
+# Pass token inline
+node blogimageclaw.js "cozy home office setup" --token YOUR_NETA_TOKEN
 ```
+
+The script prints the image URL to stdout on success:
+```
+https://cdn.talesofai.cn/.../<image>.jpg
+```
+
+---
+
+## Options
+
+| Flag | Values | Default | Description |
+|------|--------|---------|-------------|
+| `--size` | `square`, `portrait`, `landscape`, `tall` | `landscape` | Output image dimensions |
+| `--style` | `anime`, `cinematic`, `realistic` | `cinematic` | Visual style (passed via prompt) |
+| `--ref` | `<picture_uuid>` | — | Reference image UUID for style/param inheritance |
+| `--token` | `<token>` | — | Neta API token (overrides env / file) |
+
+### Size reference
+
+| Name | Dimensions |
+|------|-----------|
+| `square` | 1024 × 1024 |
+| `portrait` | 832 × 1216 |
+| `landscape` | 1216 × 832 |
+| `tall` | 704 × 1408 |
+
+---
+
+## Token setup
+
+The script resolves your Neta API token in this order:
+
+1. `--token` CLI flag
+2. `NETA_TOKEN` environment variable
+3. `~/.openclaw/workspace/.env` — line matching `NETA_TOKEN=...`
+4. `~/developer/clawhouse/.env` — line matching `NETA_TOKEN=...`
+
+**Recommended:** add to your shell profile or `.env` file:
+```bash
+export NETA_TOKEN=your_token_here
+```
+
+---
+
+## Default prompt
+
+When no prompt is supplied, the skill uses:
+```
+professional blog hero image, high quality photography, relevant to topic
+```
+
+---
+
+## Examples
 
 ```bash
-node blogimg.js gen "<visual_prompt>" --size inline
-# → same output format
-```
+# Hero image for a travel blog post
+node blogimageclaw.js "aerial view of turquoise ocean with white sandy beach, golden hour"
 
-- **Forward stderr in real-time** to the user
-- Output each image URL immediately as it completes — don't batch
-- `status=FAILURE` → regenerate with a simplified prompt
-- `status=TIMEOUT` → retry once, then skip and note it
+# Tech article cover
+node blogimageclaw.js "abstract data visualization, glowing blue network nodes on dark background" --size landscape
+
+# Portrait-style author photo background
+node blogimageclaw.js "soft bokeh office background, warm natural lighting" --size portrait
+```
 
 ---
 
-## 3. Present Results
-
-Output each image as it's ready:
-
-```
-━━━━━━━━━━━━━━━━━━━━━━━━
-🖼️ Header
-{image_url}
-
-📸 Inline 1 — {section name}
-{image_url}
-
-📸 Inline 2 — {section name}
-{image_url}
-━━━━━━━━━━━━━━━━━━━━━━━━
-{N} images ready. Drop them into your blog post.
-```
-
-Quick buttons:
-- `Regenerate header 🔄` → `@{bot_name} regenerate the header image`
-- `Different style 🎨` → `@{bot_name} try a darker style`
-- `More inline images ➕` → `@{bot_name} generate more inline images`
-
----
-
-## 4. Style Suggestions
-
-If the user asks for a specific look, adjust the prompt accordingly:
-
-| Style | Add to prompt |
-|-------|--------------|
-| Editorial | `editorial photography, professional, magazine style` |
-| Tech | `clean tech illustration, digital art, blue tones` |
-| Lifestyle | `lifestyle photography, warm tones, natural light` |
-| Minimal | `minimalist, white space, simple composition` |
-| Cinematic | `cinematic, dramatic lighting, movie still` |
-| Dark | `dark, moody, rich shadows, dramatic` |
-
----
-
-## 5. Error Handling
-
-| Situation | Response |
-|-----------|---------|
-| Token missing | "Add `NETA_TOKEN=...` to `~/.openclaw/workspace/.env`" |
-| Can't read file | Ask user to paste content directly |
-| Image FAILURE | Simplify the prompt and retry |
-| Image TIMEOUT | Skip and continue, note which image failed |
+Built with Claude Code · Powered by Neta

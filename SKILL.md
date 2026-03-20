@@ -1,35 +1,26 @@
 ---
 name: blog-image-claw-skill
-description: Auto-generate matching hero and inline images for blog posts. The agent reads the content, derives visual prompts, and produces a ready-to-use image set.
-version: 1.0.0
-metadata:
-  openclaw:
-    requires:
-      env:
-        - NETA_TOKEN
-      bins:
-        - node
-    primaryEnv: NETA_TOKEN
-    emoji: "📝"
-    homepage: https://github.com/BarbaraLedbettergq/blog-image-claw-skill
+description: Generate ai blog image generator images with AI — powered by Neta talesofai API.
+tools: Bash
 ---
 
-# Blog Image Claw Skill
+# Blog Image Generator
 
-The agent reads blog content (text, file, or URL), derives visual prompts for the hero and each key section, then calls `blogimg.js` to generate images.
+Generate stunning ai blog image generator images from a text description. Get back a direct image URL instantly.
 
-## Helper script
+## When to use
+Use when someone asks to generate or create ai blog image generator images.
 
+## Quick start
 ```bash
-node blogimg.js gen "<visual_prompt>" --size header|inline
-# → {"status":"SUCCESS","url":"https://...","width":1024,"height":576}
+node blogimageclaw.js "your description here"
 ```
 
-The agent handles all content analysis. The script only calls the image generation API.
+## Options
+- `--size` — `portrait`, `landscape`, `square`, `tall` (default: `landscape`)
+- `--style` — `anime`, `cinematic`, `realistic` (default: `cinematic`)
 
-## Setup
-
+## Install
+```bash
+npx skills add BarbaraLedbettergq/blog-image-claw-skill
 ```
-NETA_TOKEN=your_token_here
-```
-in `~/.openclaw/workspace/.env`
