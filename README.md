@@ -102,3 +102,13 @@ node blogimageclaw.js "soft bokeh office background, warm natural lighting" --si
 ---
 
 Built with Claude Code · Powered by Neta
+
+## Example Output
+
+```bash
+node blogimageclaw.js "professional blog hero image, high quality photography, relevant to topic"
+```
+
+![Example output](https://oss.talesofai.cn/picture/2c1de0c7-b4e8-4083-ba2f-62b73f893d2d.webp)
+
+> Prompt: *"professional blog hero image, high quality photography, relevant to topic"*
